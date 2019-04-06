@@ -1,9 +1,10 @@
 import React, { Component } from "react";
-import { getMovies } from "../services/fakeMovieService";
+import { getMovies, deleteMovie } from "../services/movieService";
+import { toast } from "react-toastify";
 import Pagination from "./common/pagination";
 import { paginate } from "../utils/paginate";
 import { sort } from "../utils/sort";
-import { getGenres } from "../services/fakeGenreService";
+import { getGenres } from "../services/genreService";
 import ListGroup from "./common/listGroup";
 import MoviesTable from "../components/moviesTable";
 
@@ -17,14 +18,25 @@ class Movies extends Component {
     sortColumn: {path: 'title', order: 'asc'}
   };
 
-  componentDidMount() {
-    const genres = [{_id : '', name : 'All movies'},  ...getGenres()];
-    this.setState({ movies: getMovies(), genres: genres });
+  async componentDidMount() {
+    const {data: genresData} = await getGenres();
+    const {data: moviesData} = await getMovies();
+    const genres = [{_id : '', name : 'All movies'},  ...genresData];
+    this.setState({ movies: moviesData, genres: genres });
   }
 
-  handleDelete = movie => {
-    const movies = this.state.movies.filter(m => m._id !== movie._id);
+  handleDelete = async movie => {
+    const originalMovies = this.state.movies;
+    const movies = originalMovies.filter(m => m._id !== movie._id); //Optimistic delete
     this.setState({ movies });
+    try {
+      await deleteMovie(movie._id);
+    } catch (ex) {
+      console.log("Exception when deleting...");
+      if (ex.response && ex.response.status == 404)
+        toast.error('This movie has already been deleted.');
+      this.setState({ originalMovies });
+    }
   };
 
   handleLike = movie => {
@@ -43,8 +55,35 @@ class Movies extends Component {
     this.setState({ currentGenre: genre, currentPage: 1 });
   };
 
+  handleAdd = movie => {
+    this.state.movies.push(movie);
+  }
+
   handleSort = sortColumn => {
     this.setState({sortColumn});
+  }
+
+  handleNewMovie = () => {
+    this.props.history.push({
+        pathname: '/movies/new'
+      }
+    );
+  }
+
+  getPagedData = () => {
+    const {
+      pageSize,
+      currentPage,
+      sortColumn,
+      movies: allMovies,
+      currentGenre
+    } = this.state;
+    const filtered = currentGenre && currentGenre._id
+    ? allMovies.filter(m => m.genre._id === currentGenre._id)
+    : allMovies;
+    const sorted = sort(filtered, [sortColumn.path], [sortColumn.order]);
+    const movies = paginate(sorted, currentPage, pageSize);
+    return {totalCount: filtered.length, data: movies};
   }
 
   render() {
@@ -59,13 +98,7 @@ class Movies extends Component {
     } = this.state;
     if (count === 0) return <p>There are no movies in the database</p>;
 
-    const filtered = currentGenre && currentGenre._id
-      ? allMovies.filter(m => m.genre._id === currentGenre._id)
-      : allMovies;
-
-    const sorted = sort(filtered, [sortColumn.path], [sortColumn.order]);
-
-    const movies = paginate(sorted, currentPage, pageSize);
+    const { totalCount, data: movies } = this.getPagedData();
 
     return (
       <div className="row">
@@ -77,7 +110,10 @@ class Movies extends Component {
           />
         </div>
         <div>
-          <p>There are {filtered.length} movies in the database </p>
+          <button onClick={this.handleNewMovie} className="btn btn-primary">
+            New Movie
+          </button>
+          <p>There are {totalCount} movies in the database </p>
           <MoviesTable 
             movies={movies}
             sortColumn={sortColumn}
@@ -86,7 +122,7 @@ class Movies extends Component {
             onSort={this.handleSort}
             />
           <Pagination
-            itemsCount={filtered.length}
+            itemsCount={totalCount}
             pageSize={pageSize}
             currentPage={currentPage}
             onPageChange={this.handlePageChange}
