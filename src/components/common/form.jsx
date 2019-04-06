@@ -78,6 +78,7 @@ class Form extends Component {
                 options={options}
                 onChange={this.handleChange}
                 error={errors[name]}
+                value={data[name]}
             />
         )
     }

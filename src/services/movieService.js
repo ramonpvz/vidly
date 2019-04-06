@@ -6,20 +6,50 @@ export const getMovies = () => {
     return axios.get(urlApi);
 }
 
+export const getMovie = (movieId) => {
+    return axios.get(urlApi + '/' + movieId);
+}
+
+function movieUrl(id) {
+    return `${urlApi}/${id}`
+}
+
 export const saveMovie = (movie) => {
-    axios({
+    if (movie._id) {
+        const body = { ...movie };
+        delete body._id
+        return axios({
+            method: 'put',
+            url: movieUrl(movie._id),
+            data: body
+        }).catch(err => {
+            throw err;
+        });
+    }   
+    return axios({
         method: 'post',
         url: urlApi,
         data: movie
-    })
+    }).catch(err => {
+        throw err;
+    });
+}
+
+export const updateMovie = (movie) => {
+    return axios({
+        method: 'put',
+        url: movieUrl(movie._id),
+        data: movie
+    }).catch(err => {
+        throw err;
+    });
 }
 
 export const deleteMovie = (id) => {
-    axios({
+    return axios({
         method: 'delete',
-        url: urlApi + "/" + id
+        url: movieUrl(id)
     }).catch(err => {
-        console.log("E-R-R-O-R: " + err);
         throw err;
     });
 }
