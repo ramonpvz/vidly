@@ -7,6 +7,7 @@ import { sort } from "../utils/sort";
 import { getGenres } from "../services/genreService";
 import ListGroup from "./common/listGroup";
 import MoviesTable from "../components/moviesTable";
+import {Link} from 'react-router-dom';
 
 class Movies extends Component {
   state = {
@@ -96,6 +97,7 @@ class Movies extends Component {
       genres,
       currentGenre
     } = this.state;
+    const user = this.props;
     if (count === 0) return <p>There are no movies in the database</p>;
 
     const { totalCount, data: movies } = this.getPagedData();
@@ -110,9 +112,14 @@ class Movies extends Component {
           />
         </div>
         <div>
-          <button onClick={this.handleNewMovie} className="btn btn-primary">
-            New Movie
-          </button>
+          { user.user &&
+            <Link
+              to="/movies/new"
+              className="btn btn-primary"
+              style={{ marginBottom: 20 }}
+            >
+              New Movie
+            </Link>}
           <p>There are {totalCount} movies in the database </p>
           <MoviesTable 
             movies={movies}
@@ -120,6 +127,7 @@ class Movies extends Component {
             onDelete={this.handleDelete}
             onLike={this.handleLike}
             onSort={this.handleSort}
+            user={user}
             />
           <Pagination
             itemsCount={totalCount}

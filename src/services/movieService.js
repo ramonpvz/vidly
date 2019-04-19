@@ -1,6 +1,9 @@
 import axios from "axios";
+import auth from "../services/authService";
 
 const urlApi = 'http://localhost:3900/api/movies';
+
+axios.defaults.headers.common["x-auth-token"] = auth.getJwt();
 
 export const getMovies = () => {
     return axios.get(urlApi);
@@ -52,4 +55,11 @@ export const deleteMovie = (id) => {
     }).catch(err => {
         throw err;
     });
+}   
+
+/*function setJwt(jwt) {
+    axios.defaults.headers.common["x-auth-token"] = jwt;
 }
+export default {
+    setJwt
+}*/

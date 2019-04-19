@@ -27,15 +27,20 @@ export function getCurrentUser() {
     try {
         const jwt = localStorage.getItem(tokenKey);
         return jwtDecode(jwt);
-      }
-      catch (ex) {
-          return null;
-      }
+    }
+    catch (ex) {
+        return null;
+    }
+}
+
+export function getJwt() {
+    return localStorage.getItem(tokenKey);  
 }
 
 export default {
     login,
     loginWithJwt,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    getJwt
 };
